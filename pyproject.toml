@@ -1,0 +1,115 @@
+[project]
+name = "spconv-triton"
+version = "0.1.0b1"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+readme = "README.md"
+description = "Triton sparse convolution library."
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    # Do NOT declare `triton` here. Torch's own wheel metadata pins the exact
+    # matching triton flavor per backend (e.g. ROCm: `pytorch-triton-rocm`).
+    "torch>=2.4",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["spconv_triton"]
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "spconv_triton",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "pyproject.toml",
+]
+
+[dependency-groups]
+# Default dev group: The unmaintained reference `spconv-cu126` is not here on purpose.
+# Locks into backend and old python/torch versions, limiting compatibility tests.
+dev = [
+    "pre-commit==4.6.0",
+    "ruff==0.15.4",
+    "pytest>=9.0.3",
+    "mypy==2.2.0",
+]
+
+[tool.pytest.ini_options]
+# Cylinder3D parity test is heavy and CUDA/spconv only. Make it skipable.
+#
+#   uv run pytest tests/ -m "not integration"   # fast unit-only pass
+#   uv run pytest tests/ -m integration         # integration only
+testpaths = ["tests"]
+markers = [
+    "integration: C3D backbone integration test (GPU + committed mini dataset). Runs by default. Filter with -m integration / -m 'not integration'.",
+]
+
+[tool.ruff]
+# Must match the package floor so lint/pyupgrade never suggest >3.10 syntax.
+target-version = "py310"
+line-length = 88
+indent-width = 4
+extend-exclude = [
+    "tests/",
+    ".venv/",
+    ".claude/",
+    "docs/",
+    "**/test_*.py",
+    "**/*_test.py",
+    "**/conftest.py",
+]
+
+[tool.ruff.lint]
+# Moderate set: real errors + import hygiene + modernization + likely bugs.
+select = [
+  "A",   # flake8-builtins - https://docs.astral.sh/ruff/rules/#flake8-builtins-a
+  "E",   # pycodestyle errors - https://docs.astral.sh/ruff/rules/#error-e
+  "F",   # Pyflakes - https://docs.astral.sh/ruff/rules/#pyflakes-f
+  "I",   # isort - https://docs.astral.sh/ruff/rules/#isort-i
+  "PT",  # pytest - https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
+  "Q",   # flake8-quotes - https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+  "RUF", # Ruff-specific rules - https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+  "S",   # bandit - https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+  "UP",  # pyupgrade - https://docs.astral.sh/ruff/rules/#pyupgrade-up
+  "W",   # pycodestyle warnings - https://docs.astral.sh/ruff/rules/#pycodestyle-w
+]
+ignore = ["E501"]  # line length not enforced (long parity strings/URLs)
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "E402"]
+
+[tool.ruff.format]
+docstring-code-format = true
+indent-style = "space"
+quote-style = "double"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+# Type-check the distributable package only. tests/ and docs/ are the frozen
+# verification contract (never linted/typed) and scripts/ is dev tooling.
+#
+# python_version tracks the toolchain interpreter (3.12), NOT the 3.10 package
+# floor: numpy>=2.2 ships PEP 695 (`type X = ...`) stubs that mypy refuses to
+# parse under python_version<3.12. The 3.10 *syntax* floor is enforced instead
+# by ruff's `target-version = "py310"` + the UP (pyupgrade) rule set.
+python_version = "3.12"
+files = ["spconv_triton"]
+# Pragmatic first-pass gate: surface real type errors + dead `# type: ignore`s
+# without demanding annotations on every function (the codebase predates typing
+# and torch/triton signatures are only partially typed upstream).
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unused_configs = true
+warn_no_return = true
+# triton ships no py.typed; torch.fx.symbolic_trace is imported only in a dead
+# `PYTORCH_VERSION < [1,10,0]` legacy branch. (spconv/cumm are intentionally
+# never imported — enforced separately — so they need no override here.)
+[[tool.mypy.overrides]]
+module = ["triton.*", "torch.fx.symbolic_trace"]
+ignore_missing_imports = true

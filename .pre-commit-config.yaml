@@ -1,0 +1,53 @@
+# Pre-commit hooks for spconv_triton.
+#
+#   One-time install:  uv run pre-commit install
+#   Manual full run:   uv run pre-commit run --all-files
+
+exclude: '^(tests/|docs/|\.venv/|\.claude/)'
+
+repos:
+  - repo: local
+    hooks:
+      # REUSE/SPDX headers on the distributable package ONLY (spconv_triton/).
+      # Tags Apache-2.0, attributes the spconv-Triton contributors, and — since
+      # SPDX has no structured "derived-from" field — folds the derivation
+      # notice into a second copyright line. Runs in pre-commit's own isolated
+      # env (additional_dependencies), so `reuse` is dev-tooling-only and never
+      # enters the package runtime or the uv env. --skip-existing keeps it
+      # idempotent (won't touch files that already carry SPDX info).
+      - id: reuse-annotate
+        name: REUSE annotate (Apache-2.0 + spconv derivation)
+        entry: reuse annotate
+        args:
+          - "--license=Apache-2.0"
+          - "--copyright=Copyright contributors to the spconv-Triton project"
+          - "--copyright=Derived from spconv, Copyright 2021 Yan Yan and contributors"
+          - "--exclude-year"
+          - "--skip-existing"
+          - "--skip-unrecognised"
+        language: python
+        additional_dependencies: ["reuse"]
+        files: '^spconv_triton/.*\.pyi?$'
+      - id: ruff-check
+        name: ruff check (--fix --unsafe-fixes)
+        entry: uv run --no-sync ruff check --fix --unsafe-fixes --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --no-sync ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+      # mypy type-checks the whole package via its pyproject `files=` scope
+      # (spconv_triton/ only). pass_filenames:false so pre-commit does NOT hand
+      # it individual changed files — mypy needs the full module graph, and the
+      # frozen tests/ + docs/ must stay out of scope.
+      - id: mypy
+        name: mypy (spconv_triton)
+        entry: uv run --no-sync mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true

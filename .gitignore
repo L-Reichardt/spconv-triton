@@ -1,0 +1,66 @@
+# ---- Environments (uv-managed; never commit) ----
+.venv/
+venv/
+env/
+ENV/
+.env
+.python-version
+references/
+uv.lock
+tests/
+scripts/
+*.code-workspace
+
+# ---- Python bytecode / compiled extensions ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ---- Packaging / build artifacts ----
+build/
+dist/
+*.egg
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# ---- Tool caches ----
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+.hypothesis/
+
+# ---- Test / coverage output ----
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+semantic-kitti/
+
+# ---- Notebooks ----
+.ipynb_checkpoints/
+
+# ---- Editors / IDEs ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ---- OS cruft ----
+.DS_Store
+Thumbs.db
+
+# ---- Docs ----
+docs/TODO.md
+
+# ---- Agents ----
+.claude/
+CLAUDE.md
+AGENTS.md
