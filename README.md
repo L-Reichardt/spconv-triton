@@ -7,7 +7,7 @@
 
 Tested on: ✅ RTX 3060 (Ampere) | ❌ A100 (Ampere) | ❌ H100 (Hopper) | ❌ B200 (Blackwell) | ✅ AMD MI300X | ❌ Nvidia Jetson
 
-Tested with `torch 2.4 – 2.12`, `python 3.10 – 3.14`
+Tested with `torch 2.4 – 2.13`, `python 3.10 – 3.14`
 
 </div>
 
@@ -124,7 +124,7 @@ The sparse kernels are already written fused.
 GPU required. The frozen suite runs against committed golden data and never needs reference spconv.
 Each `tox` env pins one python/torch/runtime combo (torch brings its own matching triton) and installs only that stack + numpy + pytest + the package. Run tox through uv so missing interpreters are auto-provisioned: `uvx --with tox-uv tox l` lists every env.
 
-The matrix covers the support corners with a minimal set of envs — python 3.10 (floor) / 3.12 / 3.14 (ceiling) paired with torch 2.4 (floor, legacy `torch.cuda.amp` branch) / 2.8 / 2.12 (current) — and is host-bound: run the CUDA rows on NVIDIA, the ROCm rows on AMD (an env fails fast if its GPU runtime cannot initialize on the host).
+The matrix covers the support corners with a minimal set of envs — python 3.10 (floor) / 3.12 / 3.14 (ceiling) paired with torch 2.4 (floor, legacy `torch.cuda.amp` branch) / 2.8 / 2.13 (current) — and is host-bound: run the CUDA rows on NVIDIA, the ROCm rows on AMD (an env fails fast if its GPU runtime cannot initialize on the host).
 
 Quick single-env dev loop (no matrix), port only:
 
@@ -148,7 +148,7 @@ One combo, or a subset of the suite:
 
 ```bash
 uvx --with tox-uv tox -e py310-torch24-cuda
-uvx --with tox-uv tox -e py314-torch212-cuda -- -k test_conv
+uvx --with tox-uv tox -e py314-torch213-cuda -- -k test_conv
 ```
 
 C3D backbone integration parity — optional, slow (200 scans + one-time kernel autotune):
