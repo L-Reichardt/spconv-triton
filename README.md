@@ -1,11 +1,13 @@
 ![spconv_triton](assets/github_banner.png)
 
 > [!NOTE]  
-> 🚧 Work in Progress: Feedback welcome!
+> 🚧 Pre-release: Feedback welcome!
 
 <div align="center">
 
-Tested on: ✅ RTX 3060 (Ampere) | ❌ A100 (Ampere) | ❌ H100 (Hopper) | ❌ B200 (Blackwell) | ✅ AMD MI300X | ❌ Nvidia Jetson
+Nvidia: ❌ T4 (Turing) | ✅ A100 (Ampere) | ✅ RTX 3060 (Ampere) | ✅ H100 (Hopper) | ✅ L4 (Lovelace) | ✅ B200 (Blackwell)
+
+AMD: ✅ MI300X
 
 Tested with `torch 2.4 – 2.13`, `python 3.10 – 3.14`
 
@@ -121,6 +123,9 @@ The sparse kernels are already written fused.
 
 ## Testing
 
+> [!NOTE]  
+> Testing coming soon (Currently test suite relies on large set of golden data and runs slowly).
+
 GPU required. The frozen suite runs against committed golden data and never needs reference spconv.
 Each `tox` env pins one python/torch/runtime combo (torch brings its own matching triton) and installs only that stack + numpy + pytest + the package. Run tox through uv so missing interpreters are auto-provisioned: `uvx --with tox-uv tox l` lists every env.
 
@@ -166,7 +171,15 @@ SPCONV_TEST_IMPL=spconv uvx --with tox-uv tox -e benchmark -- pytest tests/ -q -
 
 ## Performance & memory
 
+> [!NOTE]  
+> More performance values coming soon (planned with release of autotuning-presets).
+
+Relative performance to spconv:
+
 - [RTX 3060 (Ampere)](docs/rtx3060.md)
+- [A100 (Ampere)](docs/a100.md)
+- [H100 (Hopper)](docs/h100.md)
+- AMD, Blackwell: Not supported by spconv
 
 Reproduce on your own hardware (`./bench.sh` installs the reference `spconv-cu126` on demand via `uv run --with`, which pins that run to older python / pytorch versions; run on an idle GPU for clean numbers):
 
