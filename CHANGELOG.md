@@ -10,7 +10,7 @@ First public beta.
 
 ### 2026-07-08 (Initial Release)
 
-- All spconv 2.3.8 layer types, forward and backward, 1d–4d.
+- All spconv 2.3.8 layer types, forward and backward, 1d–3d.
 - FP32 (IEEE), TF32, and FP16 precision paths.
 - `python 3.10 – 3.14`, `torch 2.4 – 2.12` support (torch brings its matching triton).
 - Basic torch.compile support through layerwise eager execution.
@@ -21,3 +21,12 @@ First public beta.
 
 - Updated tox and verified `torch 2.13`
 - Verified Nvidia T4, A100, H100, L4, B200
+
+## [0.1.0b2]
+
+### Test suite
+
+- Slimmed the test suite to decisive parts
+- Added missing ROCm env var to allow TF32 (which is supported from torch 2.7+ onward)
+- Added test suite to git
+- Outsourced benchmarking into a dedicated environment for comparisons with other libraries
