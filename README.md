@@ -13,6 +13,11 @@ Tested with `torch 2.4 – 2.13`, `python 3.10 – 3.14`
 
 </div>
 
+
+> [!TIP]
+> Ideally, choose torch versions with Triton ≥ 3.3.0.
+> See the [autotuning section](#autotuning).
+
 ## spconv-Triton
 
 Spconv-Triton is a sparse convolution library with full operator support (Submanifold- and Dense-3D-Conv, Pooling, Transposed Convolution).
@@ -31,7 +36,7 @@ Spconv uses Triton to bring sparse convolution to non-Nvida hardware.
 
 ### When
 
-*Is spconv-Triton faster?* -> **Yes**. When running FP16 or TF32, SubM-Conv and Transposed-Conv (learned upsampling) is faster. Strided dense convolution (learned downsampling) is competetive.
+*Is spconv-Triton faster?* -> **Yes**, when running FP16 or TF32.
 See warm runtimes in [performance](#performance--memory).
 
 Currently, this library is being developed. If you are looking for something battle-tested and have an NVIDIA GPU:
@@ -94,11 +99,8 @@ It will take some time until kernels are autotuned and built.
 Set a stable `TRITON_CACHE_DIR` (default `~/.triton/cache`) to persist
 compiled kernels across processes → avoids re-paying the one-time compilation cost on every
 fresh process. On Triton ≥ 3.3.0 the `triton.autotune` config sweep is persisted to
-`TRITON_CACHE_DIR`. On older Triton that on-disk autotune cache is unavailable, so the sweep
-re-runs on every fresh process.
-
-> [!TIP]
-> Ideally, choose torch versions with Triton ≥ 3.3.0.
+`TRITON_CACHE_DIR`.
+**On older Triton that on-disk autotune cache is unavailable, so the sweep re-runs on every fresh process.**
 
 **Distributed training (DDP)**: warm `TRITON_CACHE_DIR` with a short single-process run
 before the first multi-rank launch. Otherwise every rank autotunes independently.
@@ -161,14 +163,17 @@ rm -rf ./.tox && uvx --with tox-uv tox -m warmcold
 
 ## Performance & memory
 
-> [!NOTE]  
-> More performance values coming soon
-
 Relative runtime comparison between spconv-Triton, spconv, FlexGemm, warpconvnet, fVDB.
 All warm started.
 10 runs of 1000 iterations each.
 Average / Std of medians reported.
 Warpconvnet kernels natively default to TF32 under FP32 settings and as such are not included in that section.
+
+> [!NOTE]  
+> SubM conv usually forms the core of a neural network.
+> Strided dense and transposed convs are typically used for learned up and downsampling.
+> SubM conv is therefore likely the most relevant for your use case.
+> Results still depend on the architecture.
 
 Consumer hardware:
 
@@ -176,10 +181,15 @@ Consumer hardware:
 
 Server hardware:
 
-- [Nvidia A100 (Ampere)](./docs/A100/)
-- [Nvidia H100 (Hopper)](./docs/H100/)
+- [Nvidia A100 (Ampere)](./docs/A100/) -> Faster FP16/TF32
+- [Nvidia H100 (Hopper)](./docs/H100/) -> Faster FP16/TF32
+- [Nvidia L4 (Lovelace)](./docs/L4/) -> Faster TF32
+- [AMD MI300X*](./docs/MI300X/) -> Faster FP32, TF32, FP16
 
-Embedded hardware:
+> [!NOTE]  
+> *FlexGEMM only supports SubM conv.
+> That is the only comparable layer, so we report only those results.
+> spconv-Triton has verified full ops support on AMD.
 
 ## Attribution
 
