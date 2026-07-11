@@ -39,6 +39,7 @@ coverage.xml
 htmlcov/
 .tox/
 .nox/
+**/MANIFEST.sha256
 
 # ---- Notebooks ----
 .ipynb_checkpoints/

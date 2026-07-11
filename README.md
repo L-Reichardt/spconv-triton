@@ -31,7 +31,7 @@ Spconv uses Triton to bring sparse convolution to non-Nvida hardware.
 
 ### When
 
-**Is spconv-Triton faster?** It depends on precision and workload.
+*Is spconv-Triton faster?* -> **Yes**. When running FP16 or TF32, SubM-Conv and Transposed-Conv (learned upsampling) is faster. Strided dense convolution (learned downsampling) is competetive.
 See warm runtimes in [performance](#performance--memory).
 
 Currently, this library is being developed. If you are looking for something battle-tested and have an NVIDIA GPU:
@@ -86,7 +86,7 @@ Spconv-Triton inherits spconv's peculiarities about data types.
 
 **fp16**: For fp16 inference, cast the model explicitly with `.half()`; under `torch.autocast` alone, sparse conv stays fp32 in eval mode (unlike dense `nn.Conv2d` behaviour).
 
-**tf32**: Must be explicitly turned on via `spconv_triton.constants.SPCONV_ALLOW_TF32=True` (we inherit default = False). On some AMD hardware. with `torch 2.7+`, TF32 needs `HIPBLASLT_ALLOW_TF32=1` set in the environment.
+**tf32**: Must be explicitly turned on via `spconv_triton.constants.SPCONV_ALLOW_TF32=True` (we inherit default = False). On some AMD hardware with `torch 2.7+`, TF32 needs `HIPBLASLT_ALLOW_TF32=1` set in the environment.
 
 ### Autotuning
 
@@ -156,7 +156,7 @@ Cold/warm cache-persistence pair (newest CUDA row) runs the suite from a cleaned
 Newly built cache is then reused for warm tests:
 
 ```bash
-uvx --with tox-uv tox -m warmcold
+rm -rf ./.tox && uvx --with tox-uv tox -m warmcold
 ```
 
 ## Performance & memory
@@ -164,8 +164,24 @@ uvx --with tox-uv tox -m warmcold
 > [!NOTE]  
 > More performance values coming soon
 
+Relative runtime comparison between spconv-Triton, spconv, FlexGemm, warpconvnet, fVDB.
+All warm started.
+10 runs of 1000 iterations each.
+Average / Std of medians reported.
+Warpconvnet kernels natively default to TF32 under FP32 settings and as such are not included in that section.
+
+Consumer hardware:
+
+- [Nvidia RTX3060 (Ampere)](./docs/RTX3060/)
+
+Server hardware:
+
+- [Nvidia A100 (Ampere)](./docs/A100/)
+- [Nvidia H100 (Hopper)](./docs/H100/)
+
+Embedded hardware:
+
 ## Attribution
 
 This project is derived from [spconv](https://github.com/traveller59/spconv), by Yan Yan and contributors, originally licensed under Apache License 2.0.
-
-This work is released under Apache License 2.0
+This work is also released under Apache License 2.0
