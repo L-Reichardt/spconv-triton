@@ -7,8 +7,6 @@ ENV/
 .python-version
 references/
 uv.lock
-tests/
-scripts/
 *.code-workspace
 
 # ---- Python bytecode / compiled extensions ----
@@ -41,7 +39,7 @@ coverage.xml
 htmlcov/
 .tox/
 .nox/
-semantic-kitti/
+**/MANIFEST.sha256
 
 # ---- Notebooks ----
 .ipynb_checkpoints/

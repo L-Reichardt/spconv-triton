@@ -1,6 +1,6 @@
 [project]
 name = "spconv-triton"
-version = "0.1.0b1"
+version = "0.1.0b2"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 readme = "README.md"
@@ -40,14 +40,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-# Cylinder3D parity test is heavy and CUDA/spconv only. Make it skipable.
-#
-#   uv run pytest tests/ -m "not integration"   # fast unit-only pass
-#   uv run pytest tests/ -m integration         # integration only
 testpaths = ["tests"]
-markers = [
-    "integration: C3D backbone integration test (GPU + committed mini dataset). Runs by default. Filter with -m integration / -m 'not integration'.",
-]
 
 [tool.ruff]
 # Must match the package floor so lint/pyupgrade never suggest >3.10 syntax.

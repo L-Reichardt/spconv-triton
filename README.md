@@ -31,13 +31,13 @@ Spconv uses Triton to bring sparse convolution to non-Nvida hardware.
 
 ### When
 
-**Is spconv-Triton faster?** It depends on precision and workload.
+*Is spconv-Triton faster?* -> **Yes**. When running FP16 or TF32, SubM-Conv and Transposed-Conv (learned upsampling) is faster. Strided dense convolution (learned downsampling) is competetive.
 See warm runtimes in [performance](#performance--memory).
 
 Currently, this library is being developed. If you are looking for something battle-tested and have an NVIDIA GPU:
 
 - spconv works → Keep spconv
-- Other libraries an their operator set (Torchsparse++, FlexGEMM, etc.) fit your project? → Use them
+- Other libraries and their operator set (Torchsparse++, FlexGEMM, etc.) fit your project? → Use them
 - You are facing dependency / CUDA / support / hardware issues? → Try this library
 
 > [!NOTE]
@@ -86,7 +86,7 @@ Spconv-Triton inherits spconv's peculiarities about data types.
 
 **fp16**: For fp16 inference, cast the model explicitly with `.half()`; under `torch.autocast` alone, sparse conv stays fp32 in eval mode (unlike dense `nn.Conv2d` behaviour).
 
-**tf32**: Must be explicitly turned on via `spconv_triton.constants.SPCONV_ALLOW_TF32=True` (we inherit default = False). Spconv is not affected by pytorchs internal backend behaviour / settings regarding TF32.
+**tf32**: Must be explicitly turned on via `spconv_triton.constants.SPCONV_ALLOW_TF32=True` (we inherit default = False). On some AMD hardware with `torch 2.7+`, TF32 needs `HIPBLASLT_ALLOW_TF32=1` set in the environment.
 
 ### Autotuning
 
@@ -123,27 +123,23 @@ The sparse kernels are already written fused.
 
 ## Testing
 
-> [!NOTE]  
-> Testing coming soon (Currently test suite relies on large set of golden data and runs slowly).
-
 GPU required. The frozen suite runs against committed golden data and never needs reference spconv.
-Each `tox` env pins one python/torch/runtime combo (torch brings its own matching triton) and installs only that stack + numpy + pytest + the package. Run tox through uv so missing interpreters are auto-provisioned: `uvx --with tox-uv tox l` lists every env.
+Each `tox` env pins one python/torch/runtime for AMD and Nvidia GPUs.
+The `tox` matrix covers the support corners with a minimal set of envs. Python 3.10 (floor) / 3.12 / 3.14 (ceiling) paired with torch 2.4 (floor) / 2.8 / 2.13 (current).
 
-The matrix covers the support corners with a minimal set of envs — python 3.10 (floor) / 3.12 / 3.14 (ceiling) paired with torch 2.4 (floor, legacy `torch.cuda.amp` branch) / 2.8 / 2.13 (current) — and is host-bound: run the CUDA rows on NVIDIA, the ROCm rows on AMD (an env fails fast if its GPU runtime cannot initialize on the host).
+Two env vars control the suite — `SPCONV_TEST_IMPL` (implementation under test) and `SPCONV_TEST_EXPECT_WARM` (warm-cache assertion) — documented in [environment variables](./docs/ENVIRONMENT_VARIABLES.md).
 
-Quick single-env dev loop (no matrix), port only:
+Quick test with current packages, reusing the existing triton cache:
 
 ```bash
-uv run pytest tests/ -q -p no:cacheprovider -m "not integration"
+uv run pytest tests/ -q -p no:cacheprovider
 ```
 
-NVIDIA/CUDA unit matrix (the default; cu121/cu128/cu130 runtimes):
+Full `tox` matrix, for CUDA/ROCm:
 
 ```bash
 uvx --with tox-uv tox -m cuda
 ```
-
-AMD/ROCm unit matrix (rocm6.1/6.4/7.2 runtimes):
 
 ```bash
 uvx --with tox-uv tox -m rocm
@@ -156,42 +152,36 @@ uvx --with tox-uv tox -e py310-torch24-cuda
 uvx --with tox-uv tox -e py314-torch213-cuda -- -k test_conv
 ```
 
-C3D backbone integration parity — optional, slow (200 scans + one-time kernel autotune):
+Cold/warm cache-persistence pair (newest CUDA row) runs the suite from a cleaned `TRITON_CACHE_DIR`.
+Newly built cache is then reused for warm tests:
 
 ```bash
-uvx --with tox-uv tox -e integration        # NVIDIA, pinned cu126 golden-provenance build
-uvx --with tox-uv tox -e integration-rocm   # AMD, newest ROCm build
-```
-
-Re-validate the suite against reference spconv (opt-in; `benchmark` is the only env that installs the unmaintained spconv-cu126, pinned to the golden-provenance torch 2.12.0+cu126):
-
-```bash
-SPCONV_TEST_IMPL=spconv uvx --with tox-uv tox -e benchmark -- pytest tests/ -q -p no:cacheprovider -m "not integration"
+rm -rf ./.tox && uvx --with tox-uv tox -m warmcold
 ```
 
 ## Performance & memory
 
 > [!NOTE]  
-> More performance values coming soon (planned with release of autotuning-presets).
+> More performance values coming soon
 
-Relative performance to spconv:
+Relative runtime comparison between spconv-Triton, spconv, FlexGemm, warpconvnet, fVDB.
+All warm started.
+10 runs of 1000 iterations each.
+Average / Std of medians reported.
+Warpconvnet kernels natively default to TF32 under FP32 settings and as such are not included in that section.
 
-- [RTX 3060 (Ampere)](docs/rtx3060.md)
-- [A100 (Ampere)](docs/a100.md)
-- [H100 (Hopper)](docs/h100.md)
-- AMD, Blackwell: Not supported by spconv
+Consumer hardware:
 
-Reproduce on your own hardware (`./bench.sh` installs the reference `spconv-cu126` on demand via `uv run --with`, which pins that run to older python / pytorch versions; run on an idle GPU for clean numbers):
+- [Nvidia RTX3060 (Ampere)](./docs/RTX3060/)
 
-```bash
-./bench.sh <name> [title]              # writes docs/<name>.md
-./bench.sh a100 "A100 80GB (Ampere)"   # example
-```
+Server hardware:
 
-For benchmarks on the exact golden-provenance stack (torch 2.12.0+cu126), use the isolated tox env instead: `uvx --with tox-uv tox -e benchmark -- python scripts/bench_layers.py --name <name>`.
+- [Nvidia A100 (Ampere)](./docs/A100/)
+- [Nvidia H100 (Hopper)](./docs/H100/)
+
+Embedded hardware:
 
 ## Attribution
 
 This project is derived from [spconv](https://github.com/traveller59/spconv), by Yan Yan and contributors, originally licensed under Apache License 2.0.
-
-This work is released under Apache License 2.0
+This work is also released under Apache License 2.0

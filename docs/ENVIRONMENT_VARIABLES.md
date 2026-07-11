@@ -30,3 +30,12 @@ Also, some constants are dead. Refer to notes in `spconv_triton/constants.py`.
 ## Related: Triton Cache
 
 Keep Triton's own `TRITON_CACHE_DIR` stable to persist compiled kernels (see README).
+
+## Test-suite variables
+
+These affect only the frozen test suite (`tests/`), never the shipped package:
+
+| Variable | Default | Effect |
+|---|---|---|
+| `SPCONV_TEST_IMPL` | `spconv_triton` | Implementation under test. `spconv` re-validates the suite against the unmaintained reference (only the opt-in `benchmark` tox env installs it). |
+| `SPCONV_TEST_EXPECT_WARM` | unset | `1` arms the warm-cache guard (`tests/conftest.py` + `tests/test_zz_warm_cache.py`): the whole session must reuse an existing `TRITON_CACHE_DIR` with zero kernel recompilation. Set automatically by the `warm` tox env; requires the `cold` env to have populated the shared cache first (`tox -m warmcold`). |
