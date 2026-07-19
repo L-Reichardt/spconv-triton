@@ -5,14 +5,13 @@
 
 <div align="center">
 
-Nvidia: ❌ T4 (Turing) | ✅ A100 (Ampere) | ✅ RTX 3060 (Ampere) | ✅ H100 (Hopper) | ✅ L4 (Lovelace) | ✅ B200 (Blackwell)
+Nvidia: ⚠️ T4 (Turing) | ✅ A100 (Ampere) | ✅ RTX 3060 (Ampere) | ✅ H100 (Hopper) | ✅ L4 (Lovelace) | ✅ B200 (Blackwell)
 
 AMD: ✅ MI300X
 
 Tested with `torch 2.4 – 2.13`, `python 3.10 – 3.14`
 
 </div>
-
 
 > [!TIP]
 > Ideally, choose torch versions with Triton ≥ 3.3.0.
@@ -163,17 +162,11 @@ rm -rf ./.tox && uvx --with tox-uv tox -m warmcold
 
 ## Performance & memory
 
-Relative runtime comparison between spconv-Triton, spconv, FlexGemm, warpconvnet, fVDB.
-All warm started.
-10 runs of 1000 iterations each.
-Average / Std of medians reported.
-Warpconvnet kernels natively default to TF32 under FP32 settings and as such are not included in that section.
-
-> [!NOTE]  
-> SubM conv usually forms the core of a neural network.
-> Strided dense and transposed convs are typically used for learned up and downsampling.
-> SubM conv is therefore likely the most relevant for your use case.
-> Results still depend on the architecture.
+Relative runtime comparison between `spconv-Triton`, `spconv`, `FlexGemm`, `warpconvnet`*, `fVDB`.
+SubM conv usually forms the core of a neural network.
+Strided dense and transposed convs are typically used for learned up and downsampling.
+SubM conv is therefore likely the most relevant for your use case.
+Results still depend on the architecture.
 
 Consumer hardware:
 
@@ -181,13 +174,21 @@ Consumer hardware:
 
 Server hardware:
 
+- [AMD MI300X](./docs/MI300X/)** -> Faster FP32, TF32, FP16
 - [Nvidia A100 (Ampere)](./docs/A100/) -> Faster FP16/TF32
 - [Nvidia H100 (Hopper)](./docs/H100/) -> Faster FP16/TF32
 - [Nvidia L4 (Lovelace)](./docs/L4/) -> Faster TF32
-- [AMD MI300X*](./docs/MI300X/) -> Faster FP32, TF32, FP16
+- Nvidia T4 (Turing) -> It works, but currently with subpar runtime. Use spconv.
+
+All warm started.
+10 runs of 1000 iterations each.
+Average / Std of medians reported.
 
 > [!NOTE]  
-> *FlexGEMM only supports SubM conv.
+> *Warpconvnet kernels natively default to TF32 under FP32 settings and as such are not included in that section.
+
+> [!NOTE]  
+> **FlexGEMM currently only works with SubM conv on AMD.
 > That is the only comparable layer, so we report only those results.
 > spconv-Triton has verified full ops support on AMD.
 
