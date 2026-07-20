@@ -40,6 +40,8 @@ htmlcov/
 .tox/
 .nox/
 **/MANIFEST.sha256
+# except the frozen test-suite integrity manifest, which test_checksums.py requires
+!tests/data/MANIFEST.sha256
 
 # ---- Notebooks ----
 .ipynb_checkpoints/

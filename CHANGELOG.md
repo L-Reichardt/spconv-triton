@@ -30,3 +30,4 @@ First public beta.
 - Added missing ROCm env var to allow TF32 (which is supported from torch 2.7+ onward)
 - Added test suite to git
 - Outsourced benchmarking into a dedicated environment for comparisons with other libraries
+- Testing distributed training

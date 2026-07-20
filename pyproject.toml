@@ -4,14 +4,43 @@ version = "0.1.0b2"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 readme = "README.md"
-description = "Triton sparse convolution library."
+description = "Hardware-agnostic Triton sparse convolution, a drop-in replacement for spconv on NVIDIA and AMD."
+authors = [{ name = "L. Reichardt" }]
+keywords = [
+    "sparse convolution",
+    "submanifold",
+    "spconv",
+    "triton",
+    "point cloud",
+    "voxel",
+    "3d perception",
+    "lidar",
+    "pytorch",
+    "rocm",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Environment :: GPU",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
     # Do NOT declare `triton` here. Torch's own wheel metadata pins the exact
-    # matching triton flavor per backend (e.g. ROCm: `pytorch-triton-rocm`).
+    # matching triton per backend (e.g. ROCm: `pytorch-triton-rocm`).
     "torch>=2.4",
 ]
+
+[project.urls]
+Homepage = "https://github.com/L-Reichardt/spconv-triton"
+Repository = "https://github.com/L-Reichardt/spconv-triton"
+Changelog = "https://github.com/L-Reichardt/spconv-triton/blob/master/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]
@@ -87,22 +116,16 @@ skip-magic-trailing-comma = false
 # Type-check the distributable package only. tests/ and docs/ are the frozen
 # verification contract (never linted/typed) and scripts/ is dev tooling.
 #
-# python_version tracks the toolchain interpreter (3.12), NOT the 3.10 package
-# floor: numpy>=2.2 ships PEP 695 (`type X = ...`) stubs that mypy refuses to
-# parse under python_version<3.12. The 3.10 *syntax* floor is enforced instead
-# by ruff's `target-version = "py310"` + the UP (pyupgrade) rule set.
+# python_version tracks the toolchain interpreter (3.12).
+# The 3.10 floor is enforced instead by ruff's `target-version = "py310"`
+# + the UP (pyupgrade) rule set.
 python_version = "3.12"
 files = ["spconv_triton"]
-# Pragmatic first-pass gate: surface real type errors + dead `# type: ignore`s
-# without demanding annotations on every function (the codebase predates typing
-# and torch/triton signatures are only partially typed upstream).
 warn_redundant_casts = true
 warn_unused_ignores = true
 warn_unused_configs = true
 warn_no_return = true
-# triton ships no py.typed; torch.fx.symbolic_trace is imported only in a dead
-# `PYTORCH_VERSION < [1,10,0]` legacy branch. (spconv/cumm are intentionally
-# never imported — enforced separately — so they need no override here.)
+
 [[tool.mypy.overrides]]
 module = ["triton.*", "torch.fx.symbolic_trace"]
 ignore_missing_imports = true
