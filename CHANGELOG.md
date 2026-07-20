@@ -31,3 +31,7 @@ First public beta.
 - Added test suite to git
 - Outsourced benchmarking into a dedicated environment for comparisons with other libraries
 - Testing distributed training
+
+## [1.0.0]
+
+- Initial release, now available via pypi
