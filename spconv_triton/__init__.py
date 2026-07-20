@@ -9,10 +9,12 @@ Change ``import spconv.pytorch as spconv`` to
 ``import spconv_triton.pytorch as spconv`` - everything else stays the same.
 """
 
+from importlib.metadata import version as _version
+
 from . import constants
 from .core import AlgoHint, ConvAlgo
 
-__version__ = "0.1.0b1"
+__version__ = _version("spconv-triton")
 
-# Mirrors the spconv version this package targets for API parity.
+# Ignore this. Its only here for parity tests with spconv original.
 SPCONV_VERSION_NUMBERS = [2, 3, 8]
