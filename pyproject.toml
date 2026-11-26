@@ -1,6 +1,6 @@
 [project]
 name = "spconv-triton"
-version = "0.1.0b2"
+version = "1.0.1"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 readme = "README.md"
@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 requires-python = ">=3.10"
 dependencies = [
@@ -116,9 +117,10 @@ skip-magic-trailing-comma = false
 # Type-check the distributable package only. tests/ and docs/ are the frozen
 # verification contract (never linted/typed) and scripts/ is dev tooling.
 #
-# python_version tracks the toolchain interpreter (3.12).
-# The 3.10 floor is enforced instead by ruff's `target-version = "py310"`
-# + the UP (pyupgrade) rule set.
+# python_version tracks the toolchain interpreter (3.12), not the 3.10 floor:
+# numpy>=2.2 stubs use PEP 695 (`type X = ...`), which mypy rejects below 3.12.
+# The 3.10 syntax floor is enforced by ruff's `target-version = "py310"` + UP.
+# Stdlib APIs newer than 3.10 are not checked statically.
 python_version = "3.12"
 files = ["spconv_triton"]
 warn_redundant_casts = true

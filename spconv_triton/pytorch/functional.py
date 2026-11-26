@@ -7,7 +7,6 @@
 spconv.pytorch.functional)."""
 
 from functools import reduce
-from typing import TypeVar
 
 import numpy as np
 import torch
@@ -16,36 +15,15 @@ from torch.autograd.function import once_differentiable
 
 from spconv_triton.compat import tv
 from spconv_triton.pytorch import ops
-from spconv_triton.pytorch.constants import PYTORCH_VERSION
 from spconv_triton.pytorch.core import SparseConvTensor
 from spconv_triton.pytorch.hash import HashTable
 from spconv_triton.tools import CUDAKernelTimer
 
 _MAX_INT32 = 2147483647
 
-
-_T = TypeVar("_T")
-
-
-def identity_decorator(func: _T) -> _T:
-    return func
-
-
-if PYTORCH_VERSION >= [2, 5, 0]:
-    import torch.amp as amp
-
-    _TORCH_CUSTOM_FWD = amp.custom_fwd(cast_inputs=torch.float16, device_type="cuda")
-    _TORCH_CUSTOM_BWD = amp.custom_bwd(device_type="cuda")
-elif PYTORCH_VERSION >= [1, 6, 0]:
-    import torch.cuda.amp as amp  # type: ignore[no-redef]
-
-    # Legacy (<2.5) amp.custom_fwd has no device_type kwarg; mypy sees only the
-    # ≥2.5 signature from torch's stubs.
-    _TORCH_CUSTOM_FWD = amp.custom_fwd(cast_inputs=torch.float16)  # type: ignore[call-arg]
-    _TORCH_CUSTOM_BWD = amp.custom_bwd
-else:
-    _TORCH_CUSTOM_FWD = identity_decorator
-    _TORCH_CUSTOM_BWD = identity_decorator
+# torch.amp.custom_fwd/custom_bwd take device_type since torch 2.4 (the floor).
+_TORCH_CUSTOM_FWD = torch.amp.custom_fwd(cast_inputs=torch.float16, device_type="cuda")
+_TORCH_CUSTOM_BWD = torch.amp.custom_bwd(device_type="cuda")
 
 
 class SparseConvFunction(Function):
@@ -510,7 +488,11 @@ def sparse_add(*tens: SparseConvTensor):
             max_num_indices = ten.features.shape[0]
         ten_ths.append(
             torch.sparse_coo_tensor(
-                ten.indices.T, ten.features, res_shape, requires_grad=True
+                ten.indices.T,
+                ten.features,
+                res_shape,
+                requires_grad=True,
+                check_invariants=False,
             )
         )
 

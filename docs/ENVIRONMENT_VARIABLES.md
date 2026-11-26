@@ -1,41 +1,33 @@
 # Environment variables
 
-spconv-Triton reads four environment variables.
-
-One might be useful, the other three are kept for maximum compatibility.
-Suggestion: leave defaults.
+spconv-Triton reads four environment variables. Only one of them is useful for most users. The other three exist for compatibility with spconv-cuda, the CUDA build of spconv. We recommend that you keep the defaults.
 
 | Variable | Default | Effect |
 |---|---|---|
-| `SPCONV_ALLOW_FP16_ACCUM` | `0` | `1` = fp16 GEMMs accumulate in fp16 (matches spconv-cuda). Faster only on consumer Ampere/Ada, but with some accuracy loss, hence defaults to off. |
-| `SPCONV_DO_SORT` | `1` | `0` = skip the pair-mask sort in implicit-GEMM pair generation (inherited performance knob from spconv-cuda). |
-| `SPCONV_FX_TRACE_MODE` | `0` | `1` = `SparseConvTensor` skips shape asserts so models can be traced with `torch.fx` (inherited from spconv-cuda). |
-| `SPCONV_SAVED_WEIGHT_LAYOUT` | unset | Layout (`KRSC`/`RSKC`/`RSCK`) of a checkpoint being loaded (same as spconv-cuda, including its bug. Loading non-KRSC layouts always fails). |
+| `SPCONV_ALLOW_FP16_ACCUM` | `0` | `1` makes fp16 GEMMs accumulate in fp16, as spconv-cuda does. This is faster only on consumer Ampere and Ada GPUs. It also loses some accuracy, so the default is off. |
+| `SPCONV_DO_SORT` | `1` | `0` skips the pair-mask sort in implicit-GEMM pair generation. This is a performance option inherited from spconv-cuda. |
+| `SPCONV_FX_TRACE_MODE` | `0` | `1` makes `SparseConvTensor` skip shape assertions. This lets you trace a model with `torch.fx`. The option is inherited from spconv-cuda. |
+| `SPCONV_SAVED_WEIGHT_LAYOUT` | unset | Weight layout of the checkpoint to load: `KRSC`, `RSKC`, or `RSCK`. This matches spconv-cuda, including its bug. Loading a non-KRSC layout always fails. |
 
 ## Removed
 
-Removed: `SPCONV_DISABLE_JIT`, `SPCONV_DEBUG_SAVE_PATH`, `SPCONV_BWD_SPLITK`, and
-`SPCONV_INT8_DEBUG` are no longer read — they only configured spconv-cuda's JIT
-build, debug dumps, split-K sweep, and int8 paths, none of which exist here (the
-same-named module constants remain importable for drop-in compatibility).
+These variables are no longer read: `SPCONV_DISABLE_JIT`, `SPCONV_DEBUG_SAVE_PATH`, `SPCONV_BWD_SPLITK`, and `SPCONV_INT8_DEBUG`. They controlled the JIT build, debug dumps, split-K tuning, and int8 paths of spconv-cuda. These paths do not exist in spconv-Triton. The module constants with the same names still exist, so existing imports work.
 
-## Related: Constants
+## Related: constants
 
-`spconv_triton.constants.SPCONV_ALLOW_TF32` (default `False`) is a module
-constant, not an env var (same as spconv-cuda).
-Set it to `True` to allow TF32 in the fp32 Triton GEMMs.
+`spconv_triton.constants.SPCONV_ALLOW_TF32` is not an environment variable. It is a module constant, as in spconv-cuda. Its default is `False`. Set it to `True` to allow TF32 in the fp32 Triton GEMMs.
 
-Also, some constants are dead. Refer to notes in `spconv_triton/constants.py`.
+Some constants have no effect. See the comments in `spconv_triton/constants.py`.
 
-## Related: Triton Cache
+## Related: Triton cache
 
-Keep Triton's own `TRITON_CACHE_DIR` stable to persist compiled kernels (see README).
+Set `TRITON_CACHE_DIR` to a stable path. Then Triton keeps compiled kernels between runs. See the README for details.
 
 ## Test-suite variables
 
-These affect only the frozen test suite (`tests/`), never the shipped package:
+These variables affect only the frozen test suite in `tests/`. They do not affect the installed package.
 
 | Variable | Default | Effect |
 |---|---|---|
-| `SPCONV_TEST_IMPL` | `spconv_triton` | Implementation under test. `spconv` re-validates the suite against the unmaintained reference (only the opt-in `benchmark` tox env installs it). |
-| `SPCONV_TEST_EXPECT_WARM` | unset | `1` arms the warm-cache guard (`tests/conftest.py` + `tests/test_zz_warm_cache.py`): the whole session must reuse an existing `TRITON_CACHE_DIR` with zero kernel recompilation. Set automatically by the `warm` tox env; requires the `cold` env to have populated the shared cache first (`tox -m warmcold`). |
+| `SPCONV_TEST_IMPL` | `spconv_triton` | Implementation to test. `spconv` runs the suite against the unmaintained spconv reference. Only the `benchmark` tox environment installs spconv. |
+| `SPCONV_TEST_EXPECT_WARM` | unset | `1` enables the warm-cache check in `tests/conftest.py` and `tests/test_zz_warm_cache.py`. The whole run must reuse an existing `TRITON_CACHE_DIR`, and no kernel may compile again. The `warm` tox environment sets this variable. The `cold` environment must fill the shared cache first. Run `tox -m warmcold` to do both. |

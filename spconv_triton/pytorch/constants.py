@@ -8,9 +8,9 @@
 import torch
 
 try:
-    # torch.__version__ is a TorchVersion (str subclass); keep the parsing on a
-    # plain str so the public constant is unambiguously list[int] (drives the
-    # `>= [major, minor, patch]` gates across the package).
+    # torch.__version__ is a TorchVersion, which is a str subclass. Parse a plain
+    # str, so that PYTORCH_VERSION is always list[int]. The package uses it in
+    # `>= [major, minor, patch]` checks.
     _version = str(torch.__version__)
     remove_plus = _version.find("+")
     remove_dotdev = _version.find(".dev")

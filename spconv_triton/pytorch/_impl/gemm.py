@@ -29,7 +29,6 @@ the fp-reassociation level (never for max/avg pooling), inside suite tolerance.
 """
 
 import functools
-import inspect
 
 import torch
 import triton
@@ -39,36 +38,20 @@ from spconv_triton import constants
 
 from ._autotune import AUTOTUNE_CACHE_KW
 
-# tl.dot's fp32-precision kwarg was renamed across Triton versions: >=3.0 takes
-# input_precision="ieee"/"tf32", 2.2/2.3 the older allow_tf32=False/True. Same
-# 3-operand accumulator, pure kwarg rename -- identical math. Triton <=2.1 lacks
-# the accumulator arg and is unsupported (needs torch >=2.2); _dot fails fast.
-_DOT_PARAMS = inspect.signature(tl.dot).parameters
-_TRITON_DOT_HAS_INPUT_PRECISION = "input_precision" in _DOT_PARAMS
 
-if _TRITON_DOT_HAS_INPUT_PRECISION:
-
-    @triton.jit
-    def _dot(lhs, rhs, acc, IEEE: tl.constexpr, ALLOW_TF32: tl.constexpr):
-        # out_dtype must match acc: tl.dot defaults to float32, which asserts when
-        # acc is fp16 (fp16-accumulate path). fp32 paths pass float32 -> unchanged.
-        if IEEE:
-            return tl.dot(
-                lhs,
-                rhs,
-                acc,
-                input_precision="tf32" if ALLOW_TF32 else "ieee",
-                out_dtype=acc.dtype,
-            )
-        return tl.dot(lhs, rhs, acc, out_dtype=acc.dtype)
-
-else:
-
-    @triton.jit
-    def _dot(lhs, rhs, acc, IEEE: tl.constexpr, ALLOW_TF32: tl.constexpr):
-        if IEEE:
-            return tl.dot(lhs, rhs, acc, allow_tf32=ALLOW_TF32, out_dtype=acc.dtype)
-        return tl.dot(lhs, rhs, acc, out_dtype=acc.dtype)
+@triton.jit
+def _dot(lhs, rhs, acc, IEEE: tl.constexpr, ALLOW_TF32: tl.constexpr):
+    # out_dtype must match acc: tl.dot defaults to float32, which asserts when
+    # acc is fp16 (fp16-accumulate path). fp32 paths pass float32 -> unchanged.
+    if IEEE:
+        return tl.dot(
+            lhs,
+            rhs,
+            acc,
+            input_precision="tf32" if ALLOW_TF32 else "ieee",
+            out_dtype=acc.dtype,
+        )
+    return tl.dot(lhs, rhs, acc, out_dtype=acc.dtype)
 
 
 def _gemm_configs():
